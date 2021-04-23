@@ -7,11 +7,17 @@ jest.mock("mrm-core/src/npm", () => ({
   install: mockInstall
 }));
 
-const { getConfigGetter } = require("mrm");
 const vol = require("memfs").vol;
 const task = require("./index");
 
-const stringify = o => JSON.stringify(o, null, "  ");
+const stringify = (o) => JSON.stringify(o, null, "  ");
+
+const cwd = `${process.cwd()}/`;
+const removeWorkingDir = (obj) =>
+  Object.keys(obj).reduce((acc, key) => {
+    acc[key.replace(cwd, "")] = obj[key];
+    return acc;
+  }, {});
 
 afterEach(() => vol.reset());
 
@@ -20,11 +26,11 @@ const scaffold = ({ caseName, fsStatus = {}, eslintConfig }) => {
     beforeAll(() => {
       vol.fromJSON(fsStatus);
 
-      task(getConfigGetter({ eslintConfig }));
+      task({ eslintConfig });
     });
 
     it(`should add TypeScript ESLint to ${caseName}`, () => {
-      expect(vol.toJSON()).toMatchSnapshot();
+      expect(removeWorkingDir(vol.toJSON())).toMatchSnapshot();
     });
 
     it("should install TypeScript ESLint plugins", () => {
